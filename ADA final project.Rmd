@@ -1,0 +1,556 @@
+---
+title: "Gender Differences in Provider Communication About Colorectal Cancer Screening Among U.S. Adults: An Analysis of the 2024 Health Information National Trends Survey (HINTS 7)"
+author: "Feven Gebrekidan"
+date: "`December 3,2025`"
+output: html_document
+---
+
+# Load the dataset
+```{r}
+# Set working directory 
+setwd("C:/Users/hayem/Desktop/ADA final project")
+
+# Load the dataset hints7_public (RData file)
+load("hints7_public.rda")
+
+# Inspect structure
+ls()
+str(public, max.level = 1)
+
+# Rename
+hints <- public
+
+```
+# Install and Load packages
+```{r}
+install.packages("pacman")
+pacman :: p_load(tidyverse, survey, table1, car, ResourceSelection, DiagrammeR)
+
+```
+# Convert special missing codes to NA
+
+```{r}
+special_missing <- c(-9, -7, -4)
+```
+
+# Convert Age to numeric and restrict analytic sample to adults 45+
+
+```{r}
+# Convert Age from factor → character → numeric
+hints$Age_num <- readr::parse_number(as.character(hints$Age))
+
+# Check numeric age summary
+summary(hints$Age_num)
+
+# Restrict to adults aged 45+
+hints <- hints %>% 
+  filter(Age_num >= 45)
+
+# Verify
+summary(hints$Age_num)
+
+```
+# Catagorize age 
+
+```{r}
+hints$age_group <- dplyr::case_when(
+  hints$Age_num >= 45 & hints$Age_num <= 49 ~ "45-49",
+  hints$Age_num >= 50 & hints$Age_num <= 64 ~ "50-64",
+  hints$Age_num >= 65                     ~ "65+",
+  TRUE ~ NA_character_
+)
+
+# Convert to factor
+hints$age_group <- factor(
+  hints$age_group,
+  levels = c("45-49", "50-64", "65+")
+)
+
+# Check distribution
+table(hints$age_group, useNA = "always")
+```
+
+# Recode exposure: Sex at birth (proxy for gender)
+
+```{r}
+# Check the format of BirthSex variable
+str(hints$BirthSex)
+table(hints$BirthSex, useNA = "always")
+
+# Make a character  
+hints$BirthSex_chr <- as.character(hints$BirthSex)
+
+# Recode: Female = 0 (reference), Male = 1
+hints$sex_birth <- dplyr::case_when(
+  hints$BirthSex_chr == "Female" ~ 0L,
+  hints$BirthSex_chr == "Male"   ~ 1L,
+  TRUE                           ~ NA_integer_   # Missing, don't know, etc.
+)
+
+# Change to factor
+hints$sex_birth_factor <- factor(
+  hints$sex_birth,
+  levels = c(0, 1),
+  labels = c("Female", "Male")
+)
+
+# Check result
+table(hints$sex_birth_factor, useNA = "always")
+```
+
+# Recode outcome: Provider told about CRC test options
+
+```{r}
+hints$DocTell_chr <- as.character(hints$DocTellColorectalTests2)
+
+hints$crc_told <- dplyr::case_when(
+  hints$DocTell_chr == "Yes" ~ 1L,
+  hints$DocTell_chr %in% c(
+    "No",
+    "I have never discussed these tests with a doctor or other health professional"
+  ) ~ 0L,
+  hints$DocTell_chr %in% c(
+    "Missing data (Not Ascertained)",
+    "Missing data (Web partial - Question Never Seen)",
+    "Multiple responses selected in error"
+  ) ~ NA_integer_,
+  TRUE ~ NA_integer_
+)
+
+hints$crc_told_factor <- factor(
+  hints$crc_told,
+  levels = c(0, 1),
+  labels = c("Not told / never discussed", "Told about tests")
+)
+
+table(hints$DocTell_chr,       useNA = "always")
+table(hints$crc_told_factor,   useNA = "always")
+```
+# Recode Race/Ethnicity
+
+```{r}
+# Convert to character
+hints$RaceEthn5_chr <- as.character(hints$RaceEthn5)
+
+# Recode missing categories to NA
+hints$race5 <- dplyr::case_when(
+  hints$RaceEthn5_chr %in% c(
+    "Missing data (Not Ascertained)",
+    "Missing data (Web partial - Question Never Seen)"
+  ) ~ NA_character_,
+  
+  TRUE ~ hints$RaceEthn5_chr
+)
+
+# Convert to factor
+hints$race5 <- factor(
+  hints$race5,
+  levels = c(
+    "Non-Hispanic White",
+    "Non-Hispanic Black or African American",
+    "Hispanic",
+    "Non-Hispanic Asian",
+    "Non-Hispanic Other"
+  )
+)
+
+# Check results
+table(hints$RaceEthn5_chr, useNA = "always")
+table(hints$race5,         useNA = "always")
+
+```
+# Recode Education
+
+```{r}
+# Convert to character
+hints$EducA_chr <- as.character(hints$EducA)
+
+# Recode missing data categories to NA
+hints$education <- dplyr::case_when(
+  hints$EducA_chr %in% c(
+    "Missing data (Not Ascertained)",
+    "Missing data (Web partial - Question Never Seen)"
+  ) ~ NA_character_,
+  
+  TRUE ~ hints$EducA_chr  
+)
+
+# Convert to factor
+hints$education <- factor(
+  hints$education,
+  levels = c(
+    "College Graduate or More",
+    "Some College",
+    "High School Graduate",
+    "Less than High School"
+  )
+)
+
+# Check results
+table(hints$EducA_chr, useNA = "always")
+table(hints$education, useNA = "always")
+
+```
+# Recode Income
+
+```{r}
+hints$HHInc_chr <- as.character(hints$HHInc)
+
+hints$income3 <- dplyr::case_when(
+  # < $35k
+  hints$HHInc_chr %in% c(
+    "Less than $20,000",
+    "$20,000 to < $35,000"
+  ) ~ "<$35,000",
+  
+  # $35k to < $75k
+  hints$HHInc_chr %in% c(
+    "$35,000 to < $50,000",
+    "$50,000 to < $75,000"
+  ) ~ "$35,000 to <$75,000",
+  
+  # ≥ $75k
+  hints$HHInc_chr %in% c(
+    "$75,000 to < $100,000",
+    "$100,000 or greater"
+  ) ~ ">=$75,000",
+  
+  # Missing / unknown
+  hints$HHInc_chr %in% c(
+    "Missing data (Not Ascertained)",
+    "Missing data (Web partial - Question Never Seen)"
+  ) ~ NA_character_,
+  
+  TRUE ~ NA_character_
+)
+
+hints$income3 <- factor(
+  hints$income3,
+  levels = c("<$35,000", "$35,000 to <$75,000",">=$75,000")
+)
+
+table(hints$HHInc_chr, useNA = "always")
+table(hints$income3,   useNA = "always")
+```
+# Recode Health Insurance
+
+```{r}
+hints$HealthIns_chr <- as.character(hints$HealthInsurance2)
+
+hints$insure <- dplyr::case_when(
+  hints$HealthIns_chr == "Yes" ~ 1L,
+  hints$HealthIns_chr == "No"  ~ 0L,
+  hints$HealthIns_chr %in% c(
+    "Missing data (Not Ascertained)",
+    "Missing data (Web partial - Question Never Seen)"
+  ) ~ NA_integer_,
+  TRUE ~ NA_integer_
+)
+
+hints$insure_factor <- factor(
+  hints$insure,
+  levels = c(1, 0),
+  labels = c("Insured", "Uninsured")
+)
+
+table(hints$HealthIns_chr, useNA = "always")
+table(hints$insure_factor, useNA = "always")
+```
+# Recode Healthcare utilization
+
+```{r}
+hints$FreqGo_chr <- as.character(hints$FreqGoProvider)
+
+hints$util3 <- dplyr::case_when(
+  hints$FreqGo_chr == "None" ~ "No visits",
+  hints$FreqGo_chr %in% c("1 time", "2 times") ~ "1-2 visits",
+  hints$FreqGo_chr %in% c(
+    "3 times",
+    "4 times",
+    "5-9 times",
+    "10 or more times"
+  ) ~ "3 or more visits",
+  hints$FreqGo_chr %in% c(
+    "Missing data (Not Ascertained)",
+    "Missing data (Web partial - Question Never Seen)"
+  ) ~ NA_character_,
+  TRUE ~ NA_character_
+)
+
+hints$util3 <- factor(
+  hints$util3,
+  levels = c("No visits", "1-2 visits", "3 or more visits")
+)
+
+table(hints$FreqGo_chr, useNA = "always")
+table(hints$util3,      useNA = "always")
+```
+# Analytic dataset (Complete case analysis exclusions, exclude missing data on variables of interest) 
+
+```{r}
+analytic_vars <- c(
+  "crc_told", "crc_told_factor",      
+  "sex_birth", "sex_birth_factor",      
+  "Age_num", "age_group",               
+  "race5",
+  "education",
+  "income3",
+  "insure", "insure_factor",
+  "util3",
+  "PERSON_FINWT0", "VAR_STRATUM", "VAR_CLUSTER"
+)
+
+hints_cc <- hints %>%
+  dplyr::select(all_of(analytic_vars)) %>%
+  tidyr::drop_na()
+
+# Check resulting sample size
+nrow(hints_cc)
+
+# Quick checks
+summary(hints_cc$Age_num)
+table(hints_cc$sex_birth_factor, useNA = "always")
+table(hints_cc$crc_told_factor,  useNA = "always")
+```
+# Create a flow diagram to show how the final sample size was reached
+
+```{r}
+#1. Total HINTS 7 respondents
+N_total <- nrow(public)
+
+# 2. Adults 45+ (Study poplation)
+#    Recompute using original data 
+public$Age_num <- readr::parse_number(as.character(public$Age))
+N_45plus <- public %>%
+  dplyr::filter(Age_num >= 45) %>%
+  nrow()
+
+# 3. Adults 45+ with non-missing exposure (Gender) and outcome (Provider CRC screening tests communication)
+hints_eo <- hints %>%
+  dplyr::filter(
+    !is.na(sex_birth),
+    !is.na(crc_told)
+  )
+N_eo <- nrow(hints_eo)
+
+# 4. Analytic complete-case dataset 
+N_analytic <- nrow(hints_cc)
+
+# Check the numbers
+c(
+  total_sample          = N_total,
+  age_45plus            = N_45plus,
+  non_missing_expo_out  = N_eo,
+  analytic_completecase = N_analytic
+)
+
+## Figure 1 – Flow diagram
+library(DiagrammeR)
+
+figure1 <- DiagrammeR::grViz(paste0("
+digraph flowchart {
+  node [
+    fontname = Helvetica,
+    shape = box,
+    fontsize = 14,
+    width = 4,          
+    height = 1.2,       
+    margin = 0.4,       
+    style = 'rounded,filled',
+    fillcolor = '#F8F9FA'
+  ]
+
+  node1 [label = '@@1']
+  node2 [label = '@@2']
+  node3 [label = '@@3']
+  node4 [label = '@@4']
+
+  node1 -> node2 -> node3 -> node4
+}
+
+[1]: 'HINTS 7 (2024) respondents\\n n = ", N_total, "'
+[2]: 'Adults aged 45 years and older\\n n = ", N_45plus, "'
+[3]: 'Excluded missing Gender or CRC screening communication\\n n = ", N_eo, "'
+[4]: 'Excluded missing covariates\\n (Race/ethnicity, Education, Income, Insurance, Healthcare visits)\\n Analytic sample n = ", N_analytic, "'
+"))
+
+figure1
+
+# Export Figure 1 as PNG
+png_file <- "Figure1_flow_diagram.png"
+
+DiagrammeRsvg::export_svg(figure1) %>%
+  charToRaw() %>%
+  rsvg::rsvg_png(png_file)
+
+png_file
+
+```
+
+# Survey design specification
+
+```{r}
+hints_design <- survey::svydesign(
+  ids     = ~VAR_CLUSTER,
+  strata  = ~VAR_STRATUM,
+  weights = ~PERSON_FINWT0,
+  nest    = TRUE,
+  data    = hints_cc
+)
+
+hints_design
+```
+# Table 1: Demographic characteristics of participants 
+
+```{r}
+label(hints_cc$sex_birth_factor) <- "Gender"
+label(hints_cc$age_group)        <- "Age group (years)"
+label(hints_cc$race5)            <- "Race/ethnicity"
+label(hints_cc$education)        <- "Education"
+label(hints_cc$income3)          <- "Household income"
+label(hints_cc$insure_factor)    <- "Health insurance"
+label(hints_cc$util3)            <- "Healthcare visits (past 12 months)"
+label(hints_cc$crc_told_factor)  <- "Told about CRC test options"
+
+table1(
+  ~ age_group + race5 + education + income3 +
+    insure_factor + util3 + crc_told_factor | sex_birth_factor,
+  data         = hints_cc,
+  overall      = "Total",
+  rowlabelhead = "Variable"
+)
+
+#Export Table 1 as a image
+#Install necessary packages
+install.packages("webshot2")
+install.packages("htmltools")
+
+#Save Table 1 as an HTML file
+tbl1 <- table1(
+  ~ age_group + race5 + education + income3 +
+    insure_factor + util3 + crc_told_factor | sex_birth_factor,
+  data         = hints_cc,
+  overall      = "Total",
+  rowlabelhead = "Variable"
+)
+
+htmltools::save_html(tbl1, file = "table1_temp.html")
+#Convert HTML to PNG
+webshot2::webshot("table1_temp.html", file = "table1.png",
+                  zoom = 2, vwidth = 1400, vheight = 2000)
+
+
+```
+
+# Survey-weighted logistic regression: unadjusted model
+
+```{r}
+fit_unadj <- survey::svyglm(
+  crc_told ~ sex_birth_factor,
+  design = hints_design,
+  family = quasibinomial()
+)
+
+summary(fit_unadj)
+
+summ_unadj <- summary(fit_unadj)
+coef_unadj_mat <- summ_unadj$coefficients
+ci_unadj <- confint(fit_unadj)
+
+# Build OR table
+or_table_unadj <- data.frame(
+  term      = rownames(coef_unadj_mat),
+  OR        = exp(coef_unadj_mat[, "Estimate"]),
+  CI_lower  = exp(ci_unadj[, 1]),
+  CI_upper  = exp(ci_unadj[, 2]),
+  p_value   = coef_unadj_mat[, "Pr(>|t|)"]
+)
+
+or_table_unadj
+```
+
+# Survey-weighted logistic regression: adjusted model
+
+```{r}
+fit_main <- survey::svyglm(
+  crc_told ~ sex_birth_factor +
+    age_group +
+    race5 +
+    education +
+    income3 +
+    insure_factor +
+    util3,
+  design = hints_design,
+  family = quasibinomial()
+)
+
+summary(fit_main)
+
+# Get coefficient matrix from model summary
+summ_main <- summary(fit_main)
+coef_main_mat <- summ_main$coefficients   
+
+# 95% CI for log-odds
+ci_main <- confint(fit_main)
+
+# Build final OR table
+or_table_main <- data.frame(
+  term      = rownames(coef_main_mat),
+  OR        = exp(coef_main_mat[, "Estimate"]),
+  CI_lower  = exp(ci_main[, 1]),
+  CI_upper  = exp(ci_main[, 2]),
+  p_value   = coef_main_mat[, "Pr(>|t|)"]
+)
+
+or_table_main
+```
+
+# Effect modification by age
+
+```{r}
+fit_int <- survey::svyglm(
+  crc_told ~ sex_birth_factor * age_group +
+    race5 +
+    education +
+    income3 +
+    insure_factor +
+    util3,
+  design = hints_design,
+  family = quasibinomial()
+)
+
+summary(fit_int)
+
+# Wald test for interaction term
+survey::regTermTest(
+  fit_int,
+  ~ sex_birth_factor:age_group
+)
+```
+# Assumption testing using unweighed model
+
+```{r}
+glm_unweighted <- glm(
+  crc_told ~ sex_birth_factor + age_group + race5 + 
+    education + income3 + insure_factor + util3,
+  data = hints_cc,
+  family = binomial()
+)
+summary(glm_unweighted)
+```
+# Check multicollinearity
+
+```{r}
+car::vif(glm_unweighted)
+```
+# Hosmer–Lemeshow goodness-of-fit test
+
+```{r}
+hoslem.test(glm_unweighted$y, fitted(glm_unweighted), g=10)
+```
+# Check influential/outlier observations
+
+```{r}
+plot(glm_unweighted, which=4, id.n=5)
+```
+#End of Code
