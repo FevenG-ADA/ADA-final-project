@@ -2,24 +2,19 @@
 
 ## Project Description
 
-This repository contains the analytic code and documentation for a study examining gender differences in provider communication about colorectal cancer (CRC) screening among U.S. adults aged 45 years and older. The analysis uses the 2024 Health Information National Trends Survey (HINTS 7) and was completed as part of the Advanced Data Analysis course (Fall 2025) final project.
-
+This repository contains the analytic code and documentation for a study examining gender differences in provider communication about colorectal cancer (CRC) screening among U.S. adults aged 45 years and older. The analysis uses the 2024 Health Information National Trends Survey (HINTS 7) and was completed as part of the Advanced Data Analysis course (Fall 2025) final project. 
 The project evaluates whether men and women differ in being told by a healthcare provider that multiple CRC screening test options exist. The analysis also assesses whether this association varies by age group (45-49, 50-64, 65+).
----
 
 ## Dataset Description
 
-- **Data source:** Health Information National Trends Survey 7 (HINTS 7, 2024), a nationally representative survey of U.S. adults conducted by the National Cancer Institute.The dataset includes information on health behaviors, communication patterns, healthcare access, and demographic characteristics.
+- Data source: Health Information National Trends Survey 7 (HINTS 7, 2024), a nationally representative survey of U.S. adults conducted by the National Cancer Institute.The dataset includes information on health behaviors, communication patterns, healthcare access, and demographic characteristics.
+
 For this project:
-
-Only adults aged 45 and older were included.
-
-Complete-case analysis was performed for all variables used in regression models.
-
-Survey weights, strata, and cluster variables were applied to obtain nationally representative estimates.
+- Only adults aged 45 and older were included.
+- Complete-case analysis was performed for all variables used in regression models.
+- Survey weights, strata, and cluster variables were applied to obtain nationally representative estimates.
 
 ---
-
 ## Files Included
 
 - **`ADA final project.Rmd`**  
@@ -96,19 +91,16 @@ Final analytic sample
 
 ## How to Run the Code
 
-1. **Download or clone the repository.**  
-
-2. **Place hints7_public.rda in the project directory**
-
-3. **Open ADA final project.Rmd in RStudio**
-
-4. **Ensure all required packages install successfully**
-
-5. **Run the R Markdown file**
+1. Download or clone the repository. 
+2. Place hints7_public.rda in the project directory
+3. Open ADA final project.Rmd in RStudio
+4. Ensure all required packages install successfully
+5. Run the R Markdown file
 Click Knit to generate the HTML report
 
-##Author
+## Author
 
 Feven Gebrekidan
 Course: Advanced Data Analysis . Fall 2025
 Date: December 2025
+
