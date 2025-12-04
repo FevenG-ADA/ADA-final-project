@@ -5,6 +5,7 @@
 This repository contains the analytic code and documentation for a study examining gender differences in provider communication about colorectal cancer (CRC) screening among U.S. adults aged 45 years and older. The analysis uses the 2024 Health Information National Trends Survey (HINTS 7) and was completed as part of the Advanced Data Analysis course (Fall 2025) final project. 
 The project evaluates whether men and women differ in being told by a healthcare provider that multiple CRC screening test options exist. The analysis also assesses whether this association varies by age group (45-49, 50-64, 65+).
 
+---
 ## Dataset Description
 
 - Data source: Health Information National Trends Survey 7 (HINTS 7, 2024), a nationally representative survey of U.S. adults conducted by the National Cancer Institute.The dataset includes information on health behaviors, communication patterns, healthcare access, and demographic characteristics.
@@ -17,7 +18,7 @@ For this project:
 ---
 ## Files Included
 
-- **`ADA final project.Rmd`**  
+- `ADA final project.Rmd`  
   Complete R Markdown file containing all data cleaning, recoding, survey design setup, descriptive tables, logistic regression models, effect modification testing, and diagnostics.
 
 - `hints7_public.rda`  
@@ -100,8 +101,9 @@ Click Knit to generate the HTML report
 
 ## Author
 
-*Feven Gebrekidan
-*Course: Advanced Data Analysis 
-*Date: December 2025
+Feven Gebrekidan <br>
+Course: Advanced Data Analysis <br>
+Date: December 2025
+
 
 
