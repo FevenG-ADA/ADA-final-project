@@ -47,7 +47,7 @@ The R Markdown file performs the following steps:
   - Household income 
   - Health insurance `
   - Healthcare utilization   
-- Reassigns special HINTS missing codes (???9, ???7, ???4) to `NA`.
+- Reassigns special HINTS missing codes (-9, -7, -4) to `NA`.
 
 ### 3. Construct analytic dataset  
 - Selects final analysis variables including design weights.  
@@ -100,7 +100,8 @@ Click Knit to generate the HTML report
 
 ## Author
 
-Feven Gebrekidan
-Course: Advanced Data Analysis . Fall 2025
-Date: December 2025
+*Feven Gebrekidan
+*Course: Advanced Data Analysis 
+*Date: December 2025
+
 
