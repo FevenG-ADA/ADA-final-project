@@ -93,8 +93,8 @@ Final analytic sample
 ## How to Run the Code
 
 1. Download or clone the repository. 
-2. Place hints7_public.rda in the project directory
-3. Open ADA final project.Rmd in RStudio
+2. Place 'hints7_public.rda' in the project directory
+3. Open 'ADA final project.Rmd' in RStudio
 4. Ensure all required packages install successfully
 5. Run the R Markdown file
 Click Knit to generate the HTML report
@@ -104,6 +104,7 @@ Click Knit to generate the HTML report
 Feven Gebrekidan <br>
 Course: Advanced Data Analysis <br>
 Date: December 2025
+
 
 
 
